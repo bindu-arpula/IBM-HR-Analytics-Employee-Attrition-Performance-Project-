@@ -1,0 +1,173 @@
+CREATE TABLE hr_employee_attrition (
+Age INT,
+Attrition VARCHAR(5),
+BusinessTravel VARCHAR(25),
+DailyRate INT,
+Department VARCHAR(25),
+DistanceFromHome INT,
+Education INT,
+EducationField VARCHAR(25),
+EmployeeCount INT,
+EmployeeNumber INT,
+EnvironmentSatisfaction INT,
+Gender VARCHAR(6),
+HourlyRate INT,
+JobInvolvement INT,
+JobLevel INT,
+JobRole VARCHAR(50),
+JobSatisfaction INT,
+MaritalStatus VARCHAR(10),
+MonthlyIncome INT,
+MonthlyRate INT,
+NumCompaniesWorked INT,
+Over18 VARCHAR(1),
+OverTime VARCHAR(4),
+PercentSalaryHike INT,
+PerformanceRating INT,
+RelationshipSatisfaction INT,
+StandardHours INT,
+StockOptionLevel INT,
+TotalWorkingYears INT,
+TrainingTimesLastYear INT,
+WorkLifeBalance INT,
+YearsAtCompany INT,
+YearsInCurrentRole INT,
+YearsSinceLastPromotion INT,
+YearsWithCurrManager INT
+);
+SELECT * FROM hr_employee_attrition;
+
+#Loading data file into SQL
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/WA_Fn-UseC_-HR-Employee-Attrition.csv'
+INTO TABLE hr_employee_attrition
+FIELDS TERMINATED BY ',' #for a csv file 
+ENCLOSED BY '"' # sometimes text data may contain comma within it
+LINES TERMINATED BY '\r\n' #in windows - indicating the end of the line 
+IGNORE 1 ROWS; #to ignore the headings of columns
+
+SHOW VARIABLES LIKE 'secure_file_priv';
+
+#Attrition Rate
+SELECT
+	ROUND(SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS ATTRITION_RATE_PERCENTAGE
+FROM hr_employee_attrition;
+
+#Departmental breakdown
+SELECT
+	Department,
+    COUNT(*) AS Total_Employees,
+    SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END)AS Employees_Left,
+    ROUND(SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as Department_Attrition_Rate
+FROM hr_employee_attrition
+GROUP BY Department
+Order BY Department_Attrition_Rate DESC;
+
+#Compenstion check 
+SELECT
+	Attrition,
+    COUNT(*)AS Employee_count,
+    ROUND(AVG(MonthlyIncome), 2) AS Average_Monthly_Income
+    FROM hr_employee_attrition
+    GROUP BY Attrition;
+    
+#Attrition Rate by gender
+SELECT Gender,
+	COUNT(*) AS Total_employees,
+    SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) AS Employees_left,
+    ROUND(SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS Gender_Attrition_Rate
+    FROM hr_employee_attrition
+    GROUP BY Gender
+    ORDER BY Gender_Attrition_rate DESC;
+
+# Comparing attrition rates for people who work overtime vs. those who don't.
+SELECT OverTime,
+COUNT(*) AS Total_employees,
+SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) AS Employees_left,
+    ROUND(SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS Attrition_Rate
+FROM hr_employee_attrition
+GROUP BY OverTime
+ORDER BY Employees_left DESC;
+-- Employees working Overtime have an attrition rate of 30.53%, compared to 10.44% for those who don't. This suggests overtime is an important attrition factor.
+
+-- Does staying in the same role for too long cause people to quit?
+SELECT YearsInCurrentRole,
+COUNT(*) AS Total_employees,
+SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) AS Employees_left,
+    ROUND(SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS Attrition_Rate
+FROM hr_employee_attrition
+GROUP BY YearsInCurrentRole
+ORDER BY Employees_left DESC;
+
+SELECT 
+	YearsSinceLastPromotion,
+    COUNT(*) AS Total_employees,
+    SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) AS Employees_left,
+    ROUND(AVG(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0, 2) AS Attrition_Rate
+FROM hr_employee_attrition
+GROUP BY YearsSinceLastPromotion
+ORDER BY Employees_left DESC;
+--  				(OR)
+SELECT 
+    CASE 
+        WHEN YearsSinceLastPromotion = 0 THEN 'No promotion'
+        WHEN YearsSinceLastPromotion BETWEEN 1 AND 2 THEN '1-2 years'
+        WHEN YearsSinceLastPromotion BETWEEN 3 AND 5 THEN '3-5 years'
+        ELSE '5+ years'
+    END AS Promotion_Stage,
+    COUNT(*) AS Total_Employees,
+    SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) AS Employees_Left,
+    ROUND(SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS Attrition_Rate
+FROM hr_employee_attrition
+GROUP BY Promotion_Stage
+ORDER BY Attrition_Rate DESC;
+
+#Does a long distance from home affect retention?
+SELECT
+	CASE
+		WHEN DistanceFromHome <= 5 THEN 'Short'
+        WHEN DistanceFromHome BETWEEN 6 AND 20 THEN 'Medium'
+        ELSE 'Long'
+	END AS Distance_From_home,
+    COUNT(*) AS Total_Employees,
+    SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) AS Employees_Left,
+    ROUND(AVG(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0, 2) AS Attrition_Rate
+FROM hr_employee_attrition
+GROUP BY Distance_From_home
+ORDER BY Attrition_Rate DESC;
+
+SELECT DISTINCT PerformanceRating FROM hr_employee_attrition;
+
+#Is the company paying its best performers enough to keep them?
+SELECT
+	CASE
+    WHEN PerformanceRating = '4' THEN 'Very Good'
+    WHEN PerformanceRating = '3' THEN 'Good'
+    ELSE 'Not Performed Well'
+END AS Performance, Attrition,
+COUNT(*) AS Total_employees,
+ROUND(AVG(MonthlyIncome), 2) AS Average_Monthly_Income
+FROM hr_employee_attrition
+GROUP BY Performance, Attrition
+ORDER BY Performance DESC, Attrition ASC;
+
+SELECT 
+    CASE 
+        WHEN TotalWorkingYears <= 2 THEN 'Entry Level (0-2 yrs)'
+        WHEN TotalWorkingYears <= 5 THEN 'Early Career (3-5 yrs)'
+        WHEN TotalWorkingYears <= 10 THEN 'Mid Career (6-10 yrs)'
+        ELSE 'Senior Level (10+ yrs)'
+    END AS Career_Stage,
+    COUNT(*) AS Total_Employees,
+    SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) AS Employees_Left,
+    ROUND(SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS Attrition_Rate
+FROM hr_employee_attrition
+GROUP BY Career_Stage
+ORDER BY Attrition_Rate DESC;
+
+SELECT 
+    JobRole,
+    COUNT(*) AS Total_Employees,
+    ROUND(SUM(CASE WHEN Attrition = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS Attrition_Rate
+FROM hr_employee_attrition
+GROUP BY JobRole
+ORDER BY Attrition_Rate DESC;
