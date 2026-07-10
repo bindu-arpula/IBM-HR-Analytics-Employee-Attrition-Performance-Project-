@@ -1,6 +1,19 @@
 # IBM-HR-Analytics-Employee-Attrition-Performance-Project-
 Built an interactive HR Analytics dashboard to identify employee attrition trends, workforce demographics, and business performance indicators using Microsoft Excel.
 
+Many organizations collect large amounts of HR data but struggle to identify the factors influencing employee attrition.
+
+Without effective visualization and analysis, HR teams cannot easily answer questions such as:
+
+Which department experiences the highest employee attrition?
+Which age groups are leaving the organization most frequently?
+Does overtime contribute to employee turnover?
+Which job roles have the highest attrition rates?
+What is the relationship between employee income and attrition?
+How can HR reduce employee turnover using data?
+
+This project addresses these questions through an interactive analytics dashboard.
+
 KPIs:
 Total Employees
 Attrition Rate
